@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Java
+*.class
+*.jar
+.settings/
+.classpath
+.project
+
+# IDEs
+.vscode/
+.idea/
+
+# Arquivos de teste temporários baixados
+python/downloads_cliente/*
+!python/downloads_cliente/.gitkeep
+python/storage_servidor/*
+!python/storage_servidor/.gitkeep
