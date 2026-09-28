@@ -91,6 +91,11 @@ public class TCPClientQ1 {
                         return;
                     }
 
+                    case "HELP": {
+                        printMenu();
+                        break;
+                    }
+
                     default:
                         System.out.println("Comando desconhecido. Digite HELP para ver os comandos.");
                         printMenu();
