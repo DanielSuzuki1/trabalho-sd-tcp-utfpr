@@ -8,11 +8,11 @@ logging.basicConfig(
     format="%(asctime)s - [%(levelname)s] - %(message)s"
 )
 
-# Porta definida no servidor Java (TCPServerQ2.java)
+# Porta do servidor Java (TCPServerQ2.java)
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 9090
 
-# Constantes do Protocolo Binário (TCPServerQ2.java)
+# Constantes do Protocolo Binário
 MSG_REQUEST = 0x01
 MSG_RESPONSE = 0x02
 
@@ -23,6 +23,17 @@ CMD_GETFILE = 0x04
 
 STATUS_SUCCESS = 0x01
 STATUS_ERROR = 0x02
+
+
+def _recv_exact(sock: socket.socket, length: int) -> bytes:
+    """Lê exatamente 'length' bytes do socket TCP evitando fragmentação."""
+    data = bytearray()
+    while len(data) < length:
+        packet = sock.recv(length - len(data))
+        if not packet:
+            raise EOFError("Conexão encerrada prematuramente pelo servidor.")
+        data.extend(packet)
+    return bytes(data)
 
 
 class ClienteBinarioQ2:
@@ -40,9 +51,7 @@ class ClienteBinarioQ2:
             os.makedirs(self.download_dir)
 
     def _enviar_cabecalho_req(self, sock: socket.socket, cmd: int, filename: str):
-        """Envia o cabeçalho base de requisição:
-        1 byte (MSG_REQUEST=0x01), 1 byte (CMD), 1 byte (Tamanho do Nome), Nome em bytes.
-        """
+        """Envia o cabeçalho base de requisição."""
         fn_bytes = filename.encode("utf-8")
         fn_size = len(fn_bytes)
         if fn_size > 255:
@@ -53,9 +62,7 @@ class ClienteBinarioQ2:
 
     def _ler_cabecalho_resp(self, sock: socket.socket) -> tuple:
         """Lê os 3 bytes do cabeçalho de resposta: MSG_RESPONSE, CMD_ID, STATUS."""
-        resp_bytes = sock.recv(3)
-        if len(resp_bytes) < 3:
-            raise ConnectionError("Resposta incompleta do servidor.")
+        resp_bytes = _recv_exact(sock, 3)
         msg_type, cmd_id, status = struct.unpack(">BBB", resp_bytes)
         return msg_type, cmd_id, status
 
@@ -68,91 +75,101 @@ class ClienteBinarioQ2:
         filename = os.path.basename(local_filepath)
         file_size = os.path.getsize(local_filepath)
 
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((self.host, self.port))
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((self.host, self.port))
 
-            # 1. Cabeçalho básico
-            self._enviar_cabecalho_req(sock, CMD_ADDFILE, filename)
+                self._enviar_cabecalho_req(sock, CMD_ADDFILE, filename)
+                sock.sendall(struct.pack(">I", file_size))
 
-            # 2. 4 bytes big-endian com o tamanho do arquivo
-            sock.sendall(struct.pack(">I", file_size))
+                with open(local_filepath, "rb") as f:
+                    while chunk := f.read(4096):
+                        sock.sendall(chunk)
 
-            # 3. Envia o conteúdo do arquivo em blocos
-            with open(local_filepath, "rb") as f:
-                while chunk := f.read(4096):
-                    sock.sendall(chunk)
-
-            # 4. Lê o status da resposta
-            _, _, status = self._ler_cabecalho_resp(sock)
-            if status == STATUS_SUCCESS:
-                print(f"[ADDFILE] Arquivo '{filename}' enviado com SUCESSO!")
-            else:
-                print(f"[ADDFILE] ERRO ao enviar arquivo '{filename}'.")
+                _, _, status = self._ler_cabecalho_resp(sock)
+                if status == STATUS_SUCCESS:
+                    print(f"[ADDFILE] Arquivo '{filename}' enviado com SUCESSO!")
+                else:
+                    print(f"[ADDFILE] ERRO ao enviar arquivo '{filename}'.")
+        except Exception as e:
+            print(f"[ADDFILE] Erro no envio: {e}")
 
     def delete_file(self, filename: str):
         """DELETE (2): Remove arquivo no servidor Java."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((self.host, self.port))
+        filename = os.path.basename(filename)
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((self.host, self.port))
 
-            self._enviar_cabecalho_req(sock, CMD_DELETE, filename)
-            _, _, status = self._ler_cabecalho_resp(sock)
+                self._enviar_cabecalho_req(sock, CMD_DELETE, filename)
+                _, _, status = self._ler_cabecalho_resp(sock)
 
-            if status == STATUS_SUCCESS:
-                print(f"[DELETE] Arquivo '{filename}' removido com SUCESSO!")
-            else:
-                print(f"[DELETE] ERRO: Arquivo '{filename}' não encontrado.")
+                if status == STATUS_SUCCESS:
+                    print(f"[DELETE] Arquivo '{filename}' removido com SUCESSO!")
+                else:
+                    print(f"[DELETE] ERRO: Arquivo '{filename}' não encontrado.")
+        except Exception as e:
+            print(f"[DELETE] Erro de comunicação: {e}")
 
     def get_files_list(self):
         """GETFILESLIST (3): Lista arquivos do servidor Java."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((self.host, self.port))
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((self.host, self.port))
 
-            self._enviar_cabecalho_req(sock, CMD_GETFILESLIST, "")
-            _, _, status = self._ler_cabecalho_resp(sock)
+                self._enviar_cabecalho_req(sock, CMD_GETFILESLIST, "")
+                _, _, status = self._ler_cabecalho_resp(sock)
 
-            if status == STATUS_SUCCESS:
-                # Lê 2 bytes Big-Endian com a quantidade de arquivos
-                count_bytes = sock.recv(2)
-                count = struct.unpack(">H", count_bytes)[0]
-                print(f"\n--- Lista de Arquivos no Servidor ({count}) ---")
+                if status == STATUS_SUCCESS:
+                    count_bytes = _recv_exact(sock, 2)
+                    (count,) = struct.unpack(">H", count_bytes)
+                    print(f"\n--- Lista de Arquivos no Servidor ({count}) ---")
 
-                for _ in range(count):
-                    fn_len = struct.unpack(">B", sock.recv(1))[0]
-                    fn = sock.recv(fn_len).decode("utf-8")
-                    print(f" - {fn}")
-                print("-------------------------------------------\n")
-            else:
-                print("[GETFILESLIST] ERRO ao obter lista de arquivos.")
+                    for _ in range(count):
+                        fn_len_bytes = _recv_exact(sock, 1)
+                        (fn_len,) = struct.unpack(">B", fn_len_bytes)
+                        fn_bytes = _recv_exact(sock, fn_len)
+                        fn = fn_bytes.decode("utf-8")
+                        print(f" - {fn}")
+                    print("-------------------------------------------\n")
+                else:
+                    print("[GETFILESLIST] ERRO ao obter lista de arquivos.")
+        except Exception as e:
+            print(f"[GETFILESLIST] Erro de comunicação: {e}")
 
     def get_file(self, filename: str):
         """GETFILE (4): Realiza download de arquivo do servidor Java."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((self.host, self.port))
+        filename = os.path.basename(filename)
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((self.host, self.port))
 
-            self._enviar_cabecalho_req(sock, CMD_GETFILE, filename)
-            _, _, status = self._ler_cabecalho_resp(sock)
+                self._enviar_cabecalho_req(sock, CMD_GETFILE, filename)
+                _, _, status = self._ler_cabecalho_resp(sock)
 
-            if status == STATUS_SUCCESS:
-                # Lê 4 bytes Big-Endian com o tamanho do arquivo
-                file_size_bytes = sock.recv(4)
-                file_size = struct.unpack(">I", file_size_bytes)[0]
+                if status == STATUS_SUCCESS:
+                    file_size_bytes = _recv_exact(sock, 4)
+                    (file_size,) = struct.unpack(">I", file_size_bytes)
 
-                dest_path = os.path.join(self.download_dir, filename)
-                received = 0
+                    dest_path = os.path.join(self.download_dir, filename)
+                    received = 0
 
-                with open(dest_path, "wb") as f:
-                    while received < file_size:
-                        chunk = sock.recv(min(4096, file_size - received))
-                        if not chunk:
-                            break
-                        f.write(chunk)
-                        received += len(chunk)
+                    with open(dest_path, "wb") as f:
+                        while received < file_size:
+                            to_read = min(4096, file_size - received)
+                            chunk = sock.recv(to_read)
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                            received += len(chunk)
 
-                print(
-                    f"[GETFILE] Download concluído: '{filename}' ({received} bytes) em '{dest_path}'"
-                )
-            else:
-                print(f"[GETFILE] ERRO: Arquivo '{filename}' não encontrado.")
+                    print(
+                        f"[GETFILE] Download concluído: '{filename}' ({received} bytes) em '{dest_path}'"
+                    )
+                else:
+                    print(f"[GETFILE] ERRO: Arquivo '{filename}' não encontrado.")
+        except Exception as e:
+            print(f"[GETFILE] Erro no download: {e}")
 
 
 def menu():
