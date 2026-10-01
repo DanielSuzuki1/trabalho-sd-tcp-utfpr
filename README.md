@@ -6,14 +6,14 @@
 
 ---
 
-## 👥 Integrantes da Dupla
+## Integrantes da Dupla
 
 * **[Daniel Suzuki Naves]** — *Desenvolvimento dos módulos em Python*
 * **[Pedro Borges Araújo]** — *Desenvolvimento dos módulos em Java*
 
 ---
 
-## 📌 Visão Geral do Projeto
+## Visão Geral do Projeto
 
 Este projeto consiste na implementação de duas aplicações cliente-servidor distribuídas utilizando sockets TCP em linguagens distintas (**Python** e **Java**), garantindo a interoperabilidade entre diferentes sistemas e plataformas através de dois protocolos de comunicação:
 
@@ -27,7 +27,7 @@ Este projeto consiste na implementação de duas aplicações cliente-servidor d
 
 ---
 
-## 📂 Estrutura do Repositório
+## Estrutura do Repositório
 
 ```text
 trabalho-sd-tcp-utfpr/
@@ -50,7 +50,7 @@ trabalho-sd-tcp-utfpr/
 ```
 ---
 
-## ⚙️ Configuração de Portas e Credenciais
+## Configuração de Portas e Credenciais
 * **Porta da Questão 1 (Servidor Textual):** `8080`
 * **Porta da Questão 2 (Servidor Binário):** `9090`
 * **Usuários Cadastrados para Autenticação (Questão 1):**
@@ -59,7 +59,7 @@ trabalho-sd-tcp-utfpr/
 
 ---
 
-## 🚀 Como Executar as Aplicações
+## Como Executar as Aplicações
 **Pré-requisitos**
 * **Python 3.10+** instalado.
 * **JDK 17+** instalado.
