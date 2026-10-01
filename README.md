@@ -91,17 +91,3 @@ python q2_cliente_binario.py
 ```
 
 ---
-
-## 🧪 Executando os Testes Locais em Python
-Para testar os scripts Python localmente antes da integração com o código Java:
-* **Testar o Servidor Textual (Q1):**
-python python/q1_servidor_textual.py
-**Em outro terminal:**
-python tests_local/test_q1_cliente.py
-* **Testar o Cliente Binário (Q2):**
-python tests_local/test_q2_servidor.py
-**Em outro terminal:**
-python python/q2_cliente_binario.py
-
----
-
