@@ -22,7 +22,7 @@ Este projeto consiste na implementação de duas aplicações cliente-servidor d
    * **Cliente (Java)**: Interage com o usuário e realiza a comunicação em UTF-8 utilizando `DataOutputStream` e `DataInputStream`.
 
 2. **Questão 2 — Protocolo Binário (Gerenciador de Arquivos Remotos)**:
-   * **Servidor (Java)**: Servidor multithreaded na porta `7777` que aceita requisições binárias estritas em Big-Endian e registra logs de execução.
+   * **Servidor (Java)**: Servidor multithreaded na porta `9090` que aceita requisições binárias estritas em Big-Endian e registra logs de execução.
    * **Cliente (Python)**: Envia requisições empacotadas em bytes para upload (`ADDFILE`), remoção (`DELETE`), listagem (`GETFILESLIST`) e download (`GETFILE`).
 
 ---
@@ -36,13 +36,13 @@ trabalho-sd-tcp-utfpr/
 │
 ├── python/                    # Módulos desenvolvidos em Python (Integrante 1)
 │   ├── q1_servidor_textual.py # Servidor do Protocolo Textual (Questão 1) - Porta 8080
-│   ├── q2_cliente_binario.py  # Cliente do Protocolo Binário (Questão 2) - Porta 7777
+│   ├── q2_cliente_binario.py  # Cliente do Protocolo Binário (Questão 2) - Porta 9090
 │   ├── storage_servidor/      # Diretório de arquivos do Servidor Q1
 │   └── downloads_cliente/     # Diretório de downloads do Cliente Q2
 │
 ├── java/                      # Módulos desenvolvidos em Java (Integrante 2)
 │   ├── Q1_TCPClientTextual.java # Cliente do Protocolo Textual (Questão 1)
-│   └── Q2_TCPServerBinario.java # Servidor do Protocolo Binário (Questão 2) - Porta 7777
+│   └── Q2_TCPServerBinario.java # Servidor do Protocolo Binário (Questão 2) - Porta 9090
 │
 └── tests_local/               # Scripts de testes locais em Python
     ├── test_q1_cliente.py     # Cliente para teste local da Questão 1
@@ -52,7 +52,7 @@ trabalho-sd-tcp-utfpr/
 
 ## ⚙️ Configuração de Portas e Credenciais
 * **Porta da Questão 1 (Servidor Textual):** `8080`
-* **Porta da Questão 2 (Servidor Binário):** `7777`
+* **Porta da Questão 2 (Servidor Binário):** `9090`
 * **Usuários Cadastrados para Autenticação (Questão 1):**
   * Usuário: `admin` | Senha: `123456` (Enviada em Hash SHA-512)
   * Usuário: `aluno` | Senha: `utfpr2026` (Enviada em Hash SHA-512)
