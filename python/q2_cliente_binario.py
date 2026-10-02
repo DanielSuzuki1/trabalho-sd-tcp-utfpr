@@ -1,3 +1,13 @@
+"""
+Descrição: Cliente TCP interativo para o protocolo binário da Questão 2.
+           Permite ao usuário enviar arquivos (ADDFILE), deletar arquivos (DELETE),
+           listar arquivos remotos (GETFILESLIST) e baixar arquivos (GETFILE)
+           utilizando formatação Big-Endian e cabeçalhos binários.
+Autores: Daniel Suzuki Naves e Pedro Borges De Araujo
+Data de criação: 25/09/2026
+Última atualização: 30/09/2026
+"""
+
 import logging
 import os
 import socket
@@ -26,7 +36,18 @@ STATUS_ERROR = 0x02
 
 
 def _recv_exact(sock: socket.socket, length: int) -> bytes:
-    """Lê exatamente 'length' bytes do socket TCP evitando fragmentação."""
+    """Lê exatamente 'length' bytes do socket TCP evitando fragmentação.
+
+    Args:
+        sock (socket.socket): Conexão socket ativa.
+        length (int): Quantidade exata de bytes esperada.
+
+    Returns:
+        bytes: Sequência exata de bytes lida do socket.
+
+    Raises:
+        EOFError: Se a conexão for encerrada antes de ler a quantidade necessária.
+    """
     data = bytearray()
     while len(data) < length:
         packet = sock.recv(length - len(data))
@@ -37,6 +58,7 @@ def _recv_exact(sock: socket.socket, length: int) -> bytes:
 
 
 class ClienteBinarioQ2:
+    """Classe responsável por gerenciar a comunicação binária com o servidor Java."""
 
     def __init__(
         self,
@@ -44,14 +66,27 @@ class ClienteBinarioQ2:
         port: int = SERVER_PORT,
         download_dir: str = "./downloads_cliente",
     ):
+        """Inicializa as configurações da conexão e diretório de downloads.
+
+        Args:
+            host (str): Endereço IP do servidor Java.
+            port (int): Porta de escuta do servidor Java.
+            download_dir (str): Diretório local para salvar arquivos baixados.
+        """
         self.host = host
         self.port = port
         self.download_dir = download_dir
         if not os.path.exists(self.download_dir):
             os.makedirs(self.download_dir)
 
-    def _enviar_cabecalho_req(self, sock: socket.socket, cmd: int, filename: str):
-        """Envia o cabeçalho base de requisição."""
+    def _enviar_cabecalho_req(self, sock: socket.socket, cmd: int, filename: str) -> None:
+        """Envia o cabeçalho base de requisição (1 byte MSG_REQUEST, 1 byte CMD, 1 byte N_LEN, N_BYTES filename).
+
+        Args:
+            sock (socket.socket): Socket TCP ativo.
+            cmd (int): Código do comando (1 a 4).
+            filename (str): Nome do arquivo alvo.
+        """
         fn_bytes = filename.encode("utf-8")
         fn_size = len(fn_bytes)
         if fn_size > 255:
@@ -61,13 +96,24 @@ class ClienteBinarioQ2:
         sock.sendall(header + fn_bytes)
 
     def _ler_cabecalho_resp(self, sock: socket.socket) -> tuple:
-        """Lê os 3 bytes do cabeçalho de resposta: MSG_RESPONSE, CMD_ID, STATUS."""
+        """Lê os 3 bytes do cabeçalho de resposta: MSG_RESPONSE, CMD_ID, STATUS.
+
+        Args:
+            sock (socket.socket): Socket TCP ativo.
+
+        Returns:
+            tuple: (msg_type, cmd_id, status)
+        """
         resp_bytes = _recv_exact(sock, 3)
         msg_type, cmd_id, status = struct.unpack(">BBB", resp_bytes)
         return msg_type, cmd_id, status
 
-    def add_file(self, local_filepath: str):
-        """ADDFILE (1): Envia arquivo local para o servidor Java."""
+    def add_file(self, local_filepath: str) -> None:
+        """ADDFILE (1): Envia um arquivo local para o servidor Java.
+
+        Args:
+            local_filepath (str): Caminho local do arquivo no computador do cliente.
+        """
         if not os.path.exists(local_filepath):
             print("Arquivo local não encontrado.")
             return
@@ -94,8 +140,12 @@ class ClienteBinarioQ2:
         except Exception as e:
             print(f"[ADDFILE] Erro no envio: {e}")
 
-    def delete_file(self, filename: str):
-        """DELETE (2): Remove arquivo no servidor Java."""
+    def delete_file(self, filename: str) -> None:
+        """DELETE (2): Solicita a remoção de um arquivo no servidor Java.
+
+        Args:
+            filename (str): Nome do arquivo a ser removido do servidor.
+        """
         filename = os.path.basename(filename)
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -111,8 +161,8 @@ class ClienteBinarioQ2:
         except Exception as e:
             print(f"[DELETE] Erro de comunicação: {e}")
 
-    def get_files_list(self):
-        """GETFILESLIST (3): Lista arquivos do servidor Java."""
+    def get_files_list(self) -> None:
+        """GETFILESLIST (3): Solicita e exibe a lista de arquivos disponíveis no servidor Java."""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((self.host, self.port))
@@ -137,8 +187,12 @@ class ClienteBinarioQ2:
         except Exception as e:
             print(f"[GETFILESLIST] Erro de comunicação: {e}")
 
-    def get_file(self, filename: str):
-        """GETFILE (4): Realiza download de arquivo do servidor Java."""
+    def get_file(self, filename: str) -> None:
+        """GETFILE (4): Baixa um arquivo do servidor Java e o salva na pasta de downloads local.
+
+        Args:
+            filename (str): Nome do arquivo a ser baixado do servidor.
+        """
         filename = os.path.basename(filename)
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -172,7 +226,8 @@ class ClienteBinarioQ2:
             print(f"[GETFILE] Erro no download: {e}")
 
 
-def menu():
+def menu() -> None:
+    """Exibe o menu interativo no console para execução de comandos do protocolo binário."""
     cliente = ClienteBinarioQ2()
 
     while True:

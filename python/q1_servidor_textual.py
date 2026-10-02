@@ -1,3 +1,13 @@
+"""
+Descrição: Servidor TCP multithreaded para o protocolo textual da Questão 1.
+           Atende múltiplos clientes simultâneos em UTF-8, processando
+           autenticação segura via hash SHA-512 e comandos de navegação
+           de diretórios (PWD, CHDIR, GETFILES, GETDIRS, EXIT).
+Autores: Daniel Suzuki Naves e Pedro Borges De Araujo
+Data de criação: 25/09/2026
+Última atualização: 01/10/2026
+"""
+
 import hashlib
 import logging
 import os
@@ -11,7 +21,7 @@ logging.basicConfig(
     format="%(asctime)s - [%(levelname)s] - %(message)s"
 )
 
-# Porta definida no cliente Java (TCPClientQ1.java)
+# Porta definida para a Questão 1
 SERVER_PORT = 8080
 
 # Base de usuários cadastrados (senhas armazenadas em Hash SHA-512)
@@ -24,14 +34,22 @@ USERS_DB = {
 
 def recv_utf(sock: socket.socket) -> str:
     """Lê uma String UTF enviada pelo DataOutputStream.writeUTF() do Java.
-    Lê 2 bytes em Big-Endian com o tamanho da string em bytes e
-    depois os bytes da string em UTF-8.
+
+    Args:
+        sock (socket.socket): Socket TCP da conexão do cliente.
+
+    Returns:
+        str: Texto decodificado em UTF-8 recebido do cliente.
+
+    Raises:
+        EOFError: Se a conexão for encerrada ou interrompida antes da leitura completa.
     """
     length_bytes = sock.recv(2)
     if not length_bytes or len(length_bytes) < 2:
         raise EOFError("Conexão encerrada pelo cliente.")
 
-    length = struct.unpack(">H", length_bytes)[0]
+    # Desempacota a tupla para obter o inteiro com o tamanho em bytes
+    (length,) = struct.unpack(">H", length_bytes)
 
     data = bytearray()
     while len(data) < length:
@@ -44,16 +62,24 @@ def recv_utf(sock: socket.socket) -> str:
 
 
 def send_utf(sock: socket.socket, text: str) -> None:
-    """Envia uma String UTF no formato do DataInputStream.readUTF() do Java.
-    Envia 2 bytes Big-Endian com o tamanho + bytes em UTF-8.
+    """Envia uma String UTF no formato compatível com DataInputStream.readUTF() do Java.
+
+    Args:
+        sock (socket.socket): Socket TCP da conexão do cliente.
+        text (str): Texto a ser enviado ao cliente.
     """
     encoded = text.encode("utf-8")
     header = struct.pack(">H", len(encoded))
     sock.sendall(header + encoded)
 
 
-def handle_client(client_socket: socket.socket, client_address: tuple):
-    """Thread dedicada para atender cada cliente Java."""
+def handle_client(client_socket: socket.socket, client_address: tuple) -> None:
+    """Thread dedicada para atender e processar as requisições de cada cliente Java.
+
+    Args:
+        client_socket (socket.socket): Socket ativo com o cliente.
+        client_address (tuple): Endereço IP e porta do cliente.
+    """
     logging.info(f"Cliente conectado: {client_address}")
     authenticated = False
 
@@ -74,7 +100,7 @@ def handle_client(client_socket: socket.socket, client_address: tuple):
                 try:
                     payload = cmd_str[7:].strip()
                     parts = [p.strip() for p in payload.split(",", 1)]
-                    user = parts[0]
+                    user = parts[0] if len(parts) > 0 else ""
                     pass_hash = parts[1] if len(parts) > 1 else ""
 
                     if user in USERS_DB and USERS_DB[user] == pass_hash:
@@ -95,7 +121,6 @@ def handle_client(client_socket: socket.socket, client_address: tuple):
                 send_utf(client_socket, "ERROR")
 
             elif cmd_str == "PWD":
-                # Devolve o caminho com barras comuns '/'
                 formatted_path = current_dir.replace("\\", "/")
                 send_utf(client_socket, formatted_path)
 
@@ -118,7 +143,6 @@ def handle_client(client_socket: socket.socket, client_address: tuple):
                     for f in os.listdir(current_dir)
                     if os.path.isfile(os.path.join(current_dir, f))
                 ]
-                # Retorna a quantidade de arquivos como String e depois cada arquivo
                 send_utf(client_socket, str(len(files)))
                 for f in files:
                     send_utf(client_socket, f)
@@ -148,7 +172,8 @@ def handle_client(client_socket: socket.socket, client_address: tuple):
         client_socket.close()
 
 
-def main():
+def main() -> None:
+    """Inicializa o Socket servidor TCP e aguarda conexões de novos clientes."""
     host = "0.0.0.0"
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

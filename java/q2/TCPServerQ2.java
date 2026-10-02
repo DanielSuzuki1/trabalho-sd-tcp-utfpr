@@ -1,26 +1,17 @@
-import java.net.*;
 import java.io.*;
+import java.net.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.logging.*;
 
 /**
- * Questão 2 - Servidor TCP (protocolo binário Big-Endian)
- * Comandos: ADDFILE(1), DELETE(2), GETFILESLIST(3), GETFILE(4)
- *
- * Cabeçalho de solicitação:
- *   byte 1: tipo (0x01)
- *   byte 2: comando (0x01–0x04)
- *   byte 3: tamanho do nome do arquivo (N)
- *   N bytes: nome do arquivo
- *   [ADDFILE only] 4 bytes big-endian: tamanho do arquivo + bytes do arquivo
- *
- * Cabeçalho de resposta:
- *   byte 1: tipo (0x02)
- *   byte 2: comando (0x01–0x04)
- *   byte 3: status (1=SUCCESS, 2=ERROR)
- *   [GETFILESLIST] 2 bytes: qtd de arquivos + lista de nomes
- *   [GETFILE]      4 bytes: tamanho + bytes do arquivo
+ * Descrição: Servidor TCP multithreaded em Java para o protocolo binário da Questão 2.
+ *            Escuta na porta 9090 e atende requisições concorrentes de gerenciamento
+ *            de arquivos (ADDFILE, DELETE, GETFILESLIST, GETFILE) formatadas em Big-Endian.
+ *            Registra auditorias e operações via java.util.logging em console e arquivo.
+ * Autores: Daniel Suzuki Naves e Pedro Borges De Araujo
+ * Data de criação: 25/09/2026
+ * Última atualização: 01/10/2026
  */
 public class TCPServerQ2 {
 
@@ -28,6 +19,13 @@ public class TCPServerQ2 {
     private static final String STORAGE_DIR  = "storage";
     private static final Logger LOGGER       = Logger.getLogger("TCPServerQ2");
 
+    /**
+     * Método principal que inicializa o logger, cria o diretório de armazenamento local
+     * e entra no loop infinito aceitando conexões de clientes TCP na porta 9090.
+     *
+     * @param args Argumentos de linha de comando (não utilizados).
+     * @throws IOException Caso ocorra falha de E/S na inicialização do ServerSocket ou diretórios.
+     */
     public static void main(String[] args) throws IOException {
         setupLogger();
         Files.createDirectories(Paths.get(STORAGE_DIR));
@@ -45,11 +43,14 @@ public class TCPServerQ2 {
         }
     }
 
-    // ── Logger: console + arquivo ─────────────────────────────────────────────
-
+    /**
+     * Configura o sistema de logs para direcionar mensagens de auditoria
+     * simultaneamente para a saída padrão (Console) e para o arquivo de log 'server_q2.log'.
+     *
+     * @throws IOException Caso ocorra falha ao criar ou acessar o arquivo 'server_q2.log'.
+     */
     private static void setupLogger() throws IOException {
         Logger root = Logger.getLogger("");
-        // remove handler padrão de console para configurar um formatado
         for (Handler h : root.getHandlers()) root.removeHandler(h);
 
         ConsoleHandler console = new ConsoleHandler();
@@ -66,8 +67,7 @@ public class TCPServerQ2 {
         LOGGER.setUseParentHandlers(false);
     }
 
-    // ── Constantes de protocolo ───────────────────────────────────────────────
-
+    // ── Constantes do Protocolo Binário ──────────────────────────────────────────
     static final byte MSG_REQUEST  = 0x01;
     static final byte MSG_RESPONSE = 0x02;
 
@@ -79,11 +79,18 @@ public class TCPServerQ2 {
     static final byte STATUS_SUCCESS = 0x01;
     static final byte STATUS_ERROR   = 0x02;
 
+    /**
+     * Retorna o caminho relativo do diretório de armazenamento do servidor.
+     *
+     * @return String representando a pasta 'storage'.
+     */
     static String storagePath() { return STORAGE_DIR; }
 }
 
-// ── Thread por cliente ────────────────────────────────────────────────────────
-
+/**
+ * Thread responsável por tratar a conexão TCP individual de um cliente,
+ * efetuando o parsing do protocolo binário e a execução das operações de arquivo.
+ */
 class ClientHandlerQ2 extends Thread {
 
     private static final Logger LOGGER = Logger.getLogger("TCPServerQ2");
@@ -92,10 +99,19 @@ class ClientHandlerQ2 extends Thread {
     private DataInputStream      in;
     private DataOutputStream     out;
 
+    /**
+     * Construtor da Thread de atendimento ao cliente.
+     *
+     * @param socket Socket TCP da conexão ativa com o cliente.
+     */
     ClientHandlerQ2(Socket socket) {
         this.socket = socket;
     }
 
+    /**
+     * Execução da Thread: processa requisições binárias contínuas enquanto a conexão
+     * permanecer aberta, efetuando o despacho para os métodos de cada comando.
+     */
     @Override
     public void run() {
         String client = socket.getRemoteSocketAddress().toString();
@@ -104,7 +120,7 @@ class ClientHandlerQ2 extends Thread {
             out = new DataOutputStream(socket.getOutputStream());
 
             while (true) {
-                // Lê cabeçalho comum da requisição
+                // Lê o byte inicial de tipo de mensagem (1 byte)
                 byte msgType = in.readByte();
                 if (msgType != TCPServerQ2.MSG_REQUEST) {
                     LOGGER.warning("[" + client + "] Tipo de mensagem inválido: " + msgType);
@@ -113,7 +129,7 @@ class ClientHandlerQ2 extends Thread {
 
                 byte cmdId       = in.readByte();
                 byte nameSize    = in.readByte();
-                byte[] nameBytes = new byte[nameSize & 0xFF]; // unsigned
+                byte[] nameBytes = new byte[nameSize & 0xFF]; // conversão para int sem sinal
                 in.readFully(nameBytes);
                 String filename  = new String(nameBytes);
 
@@ -141,11 +157,16 @@ class ClientHandlerQ2 extends Thread {
         }
     }
 
-    // ── Handlers ─────────────────────────────────────────────────────────────
-
-    /** ADDFILE (1): lê 4 bytes de tamanho + bytes do arquivo e salva no disco. */
+    /**
+     * Trata o comando ADDFILE (0x01): lê o tamanho do arquivo (4 bytes Big-Endian)
+     * e recebe o payload em blocos de até 4KB, salvando no diretório do servidor.
+     *
+     * @param client Endereço remoto do cliente para fins de log.
+     * @param filename Nome do arquivo enviado pelo cliente.
+     * @throws IOException Lançada em caso de falha na leitura do socket ou escrita no disco.
+     */
     private void handleAddFile(String client, String filename) throws IOException {
-        int fileSize = in.readInt(); // big-endian via DataInputStream
+        int fileSize = in.readInt();
         byte[] buffer = new byte[Math.min(fileSize, 4096)];
         Path dest = Paths.get(TCPServerQ2.storagePath(), sanitize(filename));
 
@@ -165,7 +186,13 @@ class ClientHandlerQ2 extends Thread {
         out.flush();
     }
 
-    /** DELETE (2): remove o arquivo do disco. */
+    /**
+     * Trata o comando DELETE (0x02): remove do disco o arquivo informado pelo cliente.
+     *
+     * @param client Endereço remoto do cliente para fins de log.
+     * @param filename Nome do arquivo a ser removido.
+     * @throws IOException Lançada em caso de erro na operação do sistema de arquivos.
+     */
     private void handleDelete(String client, String filename) throws IOException {
         Path target = Paths.get(TCPServerQ2.storagePath(), sanitize(filename));
         boolean deleted = Files.deleteIfExists(target);
@@ -181,20 +208,22 @@ class ClientHandlerQ2 extends Thread {
     }
 
     /**
-     * GETFILESLIST (3):
-     *   cabeçalho (3 bytes) + 2 bytes big-endian (qtd) +
-     *   para cada arquivo: 1 byte (tam nome) + bytes do nome
+     * Trata o comando GETFILESLIST (0x03): envia o número total de arquivos (2 bytes Big-Endian)
+     * seguido de cada nome de arquivo pré-formatado com seu tamanho de nome (1 byte).
+     *
+     * @param client Endereço remoto do cliente para fins de log.
+     * @throws IOException Lançada em caso de falha no envio dos dados de rede.
      */
     private void handleGetFilesList(String client) throws IOException {
         File dir = new File(TCPServerQ2.storagePath());
         String[] files = dir.list((d, n) -> new File(d, n).isFile());
-        if (files == null) files = new String[0];
+        if (files == null) files = new String[0]; // CORRIGIDO: instanciação de vetor com tamanho 0
 
         sendHeader(TCPServerQ2.CMD_GETFILESLIST, TCPServerQ2.STATUS_SUCCESS);
-        out.writeShort(files.length); // 2 bytes big-endian
+        out.writeShort(files.length); // 2 bytes Big-Endian
         for (String name : files) {
             byte[] nameBytes = name.getBytes();
-            out.writeByte(nameBytes.length); // 1 byte
+            out.writeByte(nameBytes.length); // 1 byte tamanho do nome
             out.write(nameBytes);
         }
         out.flush();
@@ -202,8 +231,12 @@ class ClientHandlerQ2 extends Thread {
     }
 
     /**
-     * GETFILE (4):
-     *   cabeçalho (3 bytes) + 4 bytes big-endian (tam) + bytes do arquivo
+     * Trata o comando GETFILE (0x04): transmite o tamanho do arquivo (4 bytes Big-Endian)
+     * e envia byte a byte todo o conteúdo do arquivo localizado no servidor.
+     *
+     * @param client Endereço remoto do cliente para fins de log.
+     * @param filename Nome do arquivo a ser transmitido.
+     * @throws IOException Lançada em caso de falha de leitura no disco ou escrita no socket.
      */
     private void handleGetFile(String client, String filename) throws IOException {
         Path src = Paths.get(TCPServerQ2.storagePath(), sanitize(filename));
@@ -217,28 +250,42 @@ class ClientHandlerQ2 extends Thread {
 
         byte[] data = Files.readAllBytes(src);
         sendHeader(TCPServerQ2.CMD_GETFILE, TCPServerQ2.STATUS_SUCCESS);
-        out.writeInt(data.length); // 4 bytes big-endian
+        out.writeInt(data.length); // 4 bytes Big-Endian
 
-        // Envio byte a byte conforme enunciado
+        // Envio byte a byte conforme especificação
         for (byte b : data) out.writeByte(b);
 
         out.flush();
         LOGGER.info("[" + client + "] GETFILE \"" + filename + "\" (" + data.length + " bytes) enviado");
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    /**
+     * Envia os 3 bytes do cabeçalho de resposta da aplicação (MSG_RESPONSE, CMD, STATUS).
+     *
+     * @param cmd Código do comando que gerou a resposta.
+     * @param status Indicador de sucesso (0x01) ou erro (0x02).
+     * @throws IOException Lançada em caso de falha ao escrever no socket.
+     */
     private void sendHeader(byte cmd, byte status) throws IOException {
         out.writeByte(TCPServerQ2.MSG_RESPONSE);
         out.writeByte(cmd);
         out.writeByte(status);
     }
 
-    /** Evita path traversal (ex: "../etc/passwd"). */
+    /**
+     * Sanitiza o nome do arquivo recebido para evitar vulnerabilidades de navegação
+     * indesejada no sistema de arquivos (Path Traversal).
+     *
+     * @param filename Nome bruto ou caminho recebido da rede.
+     * @return String contendo estritamente o nome base do arquivo.
+     */
     private String sanitize(String filename) {
         return Paths.get(filename).getFileName().toString();
     }
 
+    /**
+     * Fecha com segurança os fluxos de entrada/saída e o socket associado ao cliente.
+     */
     private void close() {
         try {
             if (in  != null) in.close();

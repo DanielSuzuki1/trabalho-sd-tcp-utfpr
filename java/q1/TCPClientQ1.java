@@ -1,16 +1,28 @@
-import java.net.*;
 import java.io.*;
+import java.net.*;
 import java.security.*;
 import java.util.Scanner;
 
 /**
- * Questão 1 - Cliente TCP (protocolo textual com String UTF)
+ * Descrição: Cliente TCP interativo em Java para o protocolo textual da Questão 1.
+ *            Estabelece conexão com o servidor Python na porta 8080, realiza a
+ *            autenticação de usuário via hash SHA-512 e aceita comandos de
+ *            navegação e listagem de diretórios (PWD, CHDIR, GETFILES, GETDIRS, EXIT).
+ * Autores: Daniel Suzuki Naves e Pedro Borges De Araujo
+ * Data de criação: 25/09/2026
+ * Última atualização: 01/10/2026
  */
 public class TCPClientQ1 {
 
     private static final String SERVER_IP   = "127.0.0.1";
     private static final int    SERVER_PORT = 8080;
 
+    /**
+     * Método principal que inicializa o socket TCP, gerencia o fluxo de entrada/saída UTF-8
+     * e executa o loop do menu interativo no console.
+     *
+     * @param args Argumentos de linha de comando (não utilizados).
+     */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
@@ -28,7 +40,7 @@ public class TCPClientQ1 {
                 if (line.isEmpty()) continue;
 
                 String[] parts = line.split("\\s+", 2);
-                String cmd = parts[0].toUpperCase();
+                String cmd = parts[0].toUpperCase(); // CORRIGIDO: acessa a posição 0 do vetor
 
                 switch (cmd) {
 
@@ -55,11 +67,14 @@ public class TCPClientQ1 {
                     }
 
                     case "CHDIR": {
-                        if (parts.length < 2 || parts[1].isBlank()) {
+                        String pathArg = "";
+                        if (parts.length >= 2 && !parts[1].isBlank()) {
+                            pathArg = parts[1];
+                        } else {
                             System.out.print("Caminho: ");
-                            parts = new String[]{"CHDIR", scanner.nextLine().trim()};
+                            pathArg = scanner.nextLine().trim();
                         }
-                        out.writeUTF("CHDIR " + parts[1]);
+                        out.writeUTF("CHDIR " + pathArg);
                         String resp = in.readUTF();
                         System.out.println("Resposta: " + resp);
                         break;
@@ -113,7 +128,13 @@ public class TCPClientQ1 {
         }
     }
 
-    /** Calcula SHA-512 e retorna como hex lowercase. */
+    /**
+     * Gera o hash criptográfico SHA-512 a partir de uma senha em texto claro.
+     *
+     * @param input Texto em caracteres da senha a ser criptografada.
+     * @return String contendo o hash hexadecimal de 128 caracteres em minúsculas.
+     * @throws NoSuchAlgorithmException Lançada caso o algoritmo SHA-512 não esteja disponível no ambiente Java.
+     */
     private static String sha512(String input) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-512");
         byte[] bytes = md.digest(input.getBytes());
@@ -124,6 +145,9 @@ public class TCPClientQ1 {
         return sb.toString();
     }
 
+    /**
+     * Exibe o menu no console com os comandos disponíveis para interação.
+     */
     private static void printMenu() {
         System.out.println("\nComandos disponíveis:");
         System.out.println("  CONNECT          - Autenticar no servidor");
