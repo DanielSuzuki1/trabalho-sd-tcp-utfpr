@@ -1,0 +1,82 @@
+out. 01, 2026 3:37:15 PM TCPServerQ2 main
+INFORMAÇÕES: Servidor iniciado na porta 9090 | Armazenamento: /Users/danielsuzukinaves/Documents/Projetos/trabalho-sd-tcp-utfpr/java/q2/storage
+out. 01, 2026 3:38:28 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49895
+out. 01, 2026 3:38:28 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49895] Comando=3 Arquivo=""
+out. 01, 2026 3:38:28 PM ClientHandlerQ2 handleGetFilesList
+INFORMAÇÕES: [/127.0.0.1:49895] GETFILESLIST -> 0 arquivo(s)
+out. 01, 2026 3:38:28 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49895] Cliente desconectou.
+out. 01, 2026 3:38:41 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49896
+out. 01, 2026 3:38:41 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49896] Comando=3 Arquivo=""
+out. 01, 2026 3:38:41 PM ClientHandlerQ2 handleGetFilesList
+INFORMAÇÕES: [/127.0.0.1:49896] GETFILESLIST -> 0 arquivo(s)
+out. 01, 2026 3:38:41 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49896] Cliente desconectou.
+out. 01, 2026 3:39:15 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49897
+out. 01, 2026 3:39:15 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49897] Comando=1 Arquivo="README.md"
+out. 01, 2026 3:39:15 PM ClientHandlerQ2 handleAddFile
+INFORMAÇÕES: [/127.0.0.1:49897] ADDFILE "README.md" (4240 bytes) -> storage/README.md
+out. 01, 2026 3:39:15 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49897] Cliente desconectou.
+out. 01, 2026 3:40:07 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49900
+out. 01, 2026 3:40:07 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49900] Comando=3 Arquivo=""
+out. 01, 2026 3:40:07 PM ClientHandlerQ2 handleGetFilesList
+INFORMAÇÕES: [/127.0.0.1:49900] GETFILESLIST -> 1 arquivo(s)
+out. 01, 2026 3:40:07 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49900] Cliente desconectou.
+out. 01, 2026 3:40:23 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49901
+out. 01, 2026 3:40:23 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49901] Comando=3 Arquivo=""
+out. 01, 2026 3:40:23 PM ClientHandlerQ2 handleGetFilesList
+INFORMAÇÕES: [/127.0.0.1:49901] GETFILESLIST -> 1 arquivo(s)
+out. 01, 2026 3:40:23 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49901] Cliente desconectou.
+out. 01, 2026 3:40:51 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49902
+out. 01, 2026 3:40:51 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49902] Comando=4 Arquivo="README.md"
+out. 01, 2026 3:40:51 PM ClientHandlerQ2 handleGetFile
+INFORMAÇÕES: [/127.0.0.1:49902] GETFILE "README.md" (4240 bytes) enviado
+out. 01, 2026 3:40:51 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49902] Cliente desconectou.
+out. 01, 2026 3:41:20 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49905
+out. 01, 2026 3:41:20 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49905] Comando=3 Arquivo=""
+out. 01, 2026 3:41:20 PM ClientHandlerQ2 handleGetFilesList
+INFORMAÇÕES: [/127.0.0.1:49905] GETFILESLIST -> 1 arquivo(s)
+out. 01, 2026 3:41:20 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49905] Cliente desconectou.
+out. 01, 2026 3:41:22 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49906
+out. 01, 2026 3:41:22 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49906] Comando=3 Arquivo=""
+out. 01, 2026 3:41:22 PM ClientHandlerQ2 handleGetFilesList
+INFORMAÇÕES: [/127.0.0.1:49906] GETFILESLIST -> 1 arquivo(s)
+out. 01, 2026 3:41:22 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49906] Cliente desconectou.
+out. 01, 2026 3:41:29 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49907
+out. 01, 2026 3:41:29 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49907] Comando=3 Arquivo=""
+out. 01, 2026 3:41:29 PM ClientHandlerQ2 handleGetFilesList
+INFORMAÇÕES: [/127.0.0.1:49907] GETFILESLIST -> 1 arquivo(s)
+out. 01, 2026 3:41:29 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49907] Cliente desconectou.
+out. 01, 2026 3:41:46 PM TCPServerQ2 main
+INFORMAÇÕES: Cliente conectado: /127.0.0.1:49916
+out. 01, 2026 3:41:46 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49916] Comando=2 Arquivo="README.md"
+out. 01, 2026 3:41:46 PM ClientHandlerQ2 handleDelete
+INFORMAÇÕES: [/127.0.0.1:49916] DELETE "README.md" OK
+out. 01, 2026 3:41:46 PM ClientHandlerQ2 run
+INFORMAÇÕES: [/127.0.0.1:49916] Cliente desconectou.
