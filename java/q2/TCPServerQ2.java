@@ -217,7 +217,7 @@ class ClientHandlerQ2 extends Thread {
     private void handleGetFilesList(String client) throws IOException {
         File dir = new File(TCPServerQ2.storagePath());
         String[] files = dir.list((d, n) -> new File(d, n).isFile());
-        if (files == null) files = new String[0]; // CORRIGIDO: instanciação de vetor com tamanho 0
+        if (files == null) files = new String[0]; // Instanciação de vetor com tamanho 0
 
         sendHeader(TCPServerQ2.CMD_GETFILESLIST, TCPServerQ2.STATUS_SUCCESS);
         out.writeShort(files.length); // 2 bytes Big-Endian

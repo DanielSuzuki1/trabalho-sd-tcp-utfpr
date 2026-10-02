@@ -40,7 +40,7 @@ public class TCPClientQ1 {
                 if (line.isEmpty()) continue;
 
                 String[] parts = line.split("\\s+", 2);
-                String cmd = parts[0].toUpperCase(); // CORRIGIDO: acessa a posição 0 do vetor
+                String cmd = parts[0].toUpperCase(); // Acessa a posição 0 do vetor
 
                 switch (cmd) {
 
